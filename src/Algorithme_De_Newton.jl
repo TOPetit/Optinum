@@ -37,7 +37,7 @@ options = []
 xmin,f_min,flag,nb_iters = Algorithme_De_Newton(f,gradf,hessf,x0,options)
 ```
 """
-function Algorithme_De_Newton(f::Function,gradf::Function,hessf::Function,x0,options)
+function Algorithme_De_Newton(f::Function, gradf::Function, hessf::Function, x0, options)
 
     "# Si options == [] on prends les paramètres par défaut"
     if options == []
@@ -50,10 +50,70 @@ function Algorithme_De_Newton(f::Function,gradf::Function,hessf::Function,x0,opt
         Tol_rel = options[3]
     end
 
-        n = length(x0)
-        xmin = zeros(n)
-        f_min = 0
-        flag = 0
-        nb_iters = 0
-        return xmin,f_min,flag,nb_iters
+    n = length(x0)
+    xk = x0
+    val = f(x0)
+    nb_iters = 0
+    continuer = true
+    flag = -1
+    while continuer
+        
+        if norm(gradf(xk)) < eps()
+            continuer = false
+            flag = 0
+            break
+        end
+        
+        xk_prec = xk
+        val_prec = val
+        dk = inv(hessf(xk)) * gradf(xk)
+        #println(xk, " et ", dk)
+        xk = xk - dk
+        val = f(xk)
+        norm_dk = norm(dk) #utile pour les tests suivant cas norm(xk - xk_prec) = norm(dk)
+
+        nb_iters = nb_iters + 1
+
+        if nb_iters >= max_iter
+            continuer = false
+            flag = 3
+        end
+        if (norm_dk < Tol_abs || norm_dk / min(norm(val), norm(val_prec)) < Tol_rel)
+            continuer = false
+            flag = 2
+        end
+        if (norm_dk < Tol_abs || norm_dk / min(norm(xk), norm(xk_prec)) < Tol_rel)
+            continuer = false
+            flag = 1
+        end
+    end
+    xmin = xk
+    f_min = val
+    return xmin, f_min, flag, nb_iters
 end
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

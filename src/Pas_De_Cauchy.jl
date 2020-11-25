@@ -32,11 +32,36 @@ delta1 = 1
 s1, e1 = Pas_De_Cauchy(g1,H1,delta1)
 ```
 """
-function Pas_De_Cauchy(g,H,delta)
+
+function Pas_De_Cauchy(g, H, delta)
 
     e = 0
     n = length(g)
     s = zeros(n)
+    lambda = 0 # Permet de travailler avec une version normalisée (tq lambda*delta = ||g||*t)
+
+    # m(t) = 0.5*at^2 + bt + c
+    a = transpose(g) * H * g
+    b = - norm(g)^2
     
+    if norm(g) == 0
+        e = 0
+    else
+
+        if (a <= 0)
+            lambda = 1
+        else
+            lambda = min(1, (-b * norm(g)) / (a * delta))
+        end
+
+        if lambda == 1
+            e = - 1
+        else
+            e = 1
+        end
+        s = -lambda * (delta * g) / norm(g)
+    end
+
+
     return s, e
 end

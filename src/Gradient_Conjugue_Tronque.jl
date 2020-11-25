@@ -28,7 +28,7 @@ options = []
 s = Gradient_Conjugue_Tronque(gradf(xk),hessf(xk),options)
 ```
 """
-function Gradient_Conjugue_Tronque(gradfk,hessfk,options)
+function Gradient_Conjugue_Tronque(gradfk, hessfk, options)
 
     "# Si option est vide on initialise les 3 paramètres par défaut"
     if options == []
@@ -41,7 +41,43 @@ function Gradient_Conjugue_Tronque(gradfk,hessfk,options)
         tol = options[3]
     end
 
-   n = length(gradfk)
-   s = zeros(n)
-   return s
-end
+    n = length(gradfk)
+    s = zeros(n)
+
+    g_k = gradfk
+    p_k = -g_k
+    H = hessfk
+    continuer = true
+
+    while continuer
+
+        k_k = transpose(p_k) * H * p_k
+
+        if k_k <= 0
+            # On résoud le trinôme demandé (ax² + bx + c = 0)
+            a = transpose(p_k) * p_k
+            b = transpose(s_k) * p_k + transpose(p_k) * s_k
+            c = transpose(s_k) * s_k - deltak
+            discriminant = b^2 - 4 * a * c
+
+            if discriminant <= 0
+                println("Erreur, pas de solution réelle")
+                break
+            else
+                x1 = (b - sqrt(discriminant)) / (2 * a)
+                x2 = (b + sqrt(discriminant)) / (2 * a)
+            end
+
+            if (x1 * x2 > 0)
+                println("Erreur, les solutions sont du même signe")
+            else
+                sigma_k = max(x1, x2)
+            end
+
+            s_k = s_k + sigma_k * p_k
+        end
+
+        alpha_k = 0
+
+        return s
+    end
