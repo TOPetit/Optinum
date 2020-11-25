@@ -66,11 +66,11 @@ function Algorithme_De_Newton(f::Function, gradf::Function, hessf::Function, x0,
         
         xk_prec = xk
         val_prec = val
-        dk = inv(hessf(xk)) * gradf(xk)
-        #println(xk, " et ", dk)
+        dk = hessf(xk) \ gradf(xk)
+        # println(xk, " et ", dk)
         xk = xk - dk
         val = f(xk)
-        norm_dk = norm(dk) #utile pour les tests suivant cas norm(xk - xk_prec) = norm(dk)
+        norm_dk = norm(dk) # utile pour les tests suivant cas norm(xk - xk_prec) = norm(dk)
 
         nb_iters = nb_iters + 1
 
