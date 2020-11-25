@@ -44,40 +44,100 @@ function Gradient_Conjugue_Tronque(gradfk, hessfk, options)
     n = length(gradfk)
     s = zeros(n)
 
-    g_k = gradfk
-    p_k = -g_k
-    H = hessfk
+    deltaj = deltak
+    s_j = s
+    g_j = gradfk
+    p_j = -g_j
+    H = hessfk  
+    iter = 0
     continuer = true
 
     while continuer
 
-        k_k = transpose(p_k) * H * p_k
+        q(x) = 0.5 * transpose(x) * H * x + transpose(g_j) * x
 
-        if k_k <= 0
+        k_j = transpose(p_j) * H * p_j
+
+        if k_j <= 0
             # On résoud le trinôme demandé (ax² + bx + c = 0)
-            a = transpose(p_k) * p_k
-            b = transpose(s_k) * p_k + transpose(p_k) * s_k
-            c = transpose(s_k) * s_k - deltak
+            a = transpose(p_j) * p_j
+            b = transpose(s_j) * p_j + transpose(p_j) * s_j
+            c = transpose(s_j) * s_j - deltaj
             discriminant = b^2 - 4 * a * c
 
-            if discriminant <= 0
-                println("Erreur, pas de solution réelle")
+            if discriminant < 0
+                println("Erreur, pas de solution réelle 1")
                 break
             else
                 x1 = (b - sqrt(discriminant)) / (2 * a)
                 x2 = (b + sqrt(discriminant)) / (2 * a)
             end
 
-            if (x1 * x2 > 0)
-                println("Erreur, les solutions sont du même signe")
-            else
-                sigma_k = max(x1, x2)
-            end
+            if q(s_j + x1 * p_j) <= q(s_j + x2 * p_j)
+                sigma_j = x1
+            else 
+                sigma_j = x2
 
-            s_k = s_k + sigma_k * p_k
+            end
+            
+            s = s_j + sigma_j * p_j
+            break
         end
 
-        alpha_k = 0
+        alpha_j = transpose(g_j) * g_j / k_j
 
-        return s
+        if norm(s_j + alpha_j * p_j) >= deltaj
+
+
+            # On résoud le trinôme demandé (ax² + bx + c = 0)
+            a = transpose(p_j) * p_j
+            b = transpose(s_j) * p_j + transpose(p_j) * s_j
+            c = transpose(s_j) * s_j - deltaj
+            discriminant = b^2 - 4 * a * c
+
+            if discriminant < 0
+                println("Erreur, pas de solution réelle 2")
+                break
+            else
+                x1 = (b - sqrt(discriminant)) / (2 * a)
+                x2 = (b + sqrt(discriminant)) / (2 * a)
+            end
+
+            if x1 * x2 >= 0
+                println("Erreur, les solutions sont de même signe")
+            else
+                sigma_j = max(x1, x2)
+            end
+            
+            s = s_j + sigma_j * p_j
+            break
+            
+        end
+
+        s_j_prec = s_j
+        g_j_prec = g_j
+
+        s_j = s_j + alpha_j * p_j
+        g_j = g_j + alpha_j * H * p_j
+        beta_j = (transpose(g_j) * g_j) / (transpose(g_j_prec) * g_j_prec)
+        p_j = -g_j + beta_j * p_j
+
+
+
+        iter = iter + 1
+
+        # Nombre d'itération max atteint
+        if iter >= max_iter
+            s = s_j
+            continuer = false
+        end
+
+        # Convergence atteinte
+        if norm(s_j_prec - s_j) <= tol
+            s = s_j
+            continuer = false
+        end
     end
+
+    return s
+end
