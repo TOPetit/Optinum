@@ -77,7 +77,6 @@ function Regions_De_Confiance(algo, f::Function, gradf::Function, hessf::Functio
     end
 
     n = length(x0)
-    x_tard = zeros(n)
 
     flag = 0
     nb_iters = 0
@@ -86,99 +85,99 @@ function Regions_De_Confiance(algo, f::Function, gradf::Function, hessf::Functio
     val = f(x0)
     delta_k = delta0
 
-    if algo == "cauchy"
+ 
 
         # Condition d'arrêt de la boucle while
-        continuer = true
+    continuer = true
 
-        while continuer
+    while continuer
 
 
             # Calcul du gradient et de la hessienne en x0
-            g_k = gradf(x_k)
-            H_k = hessf(x_k)
+        g_k = gradf(x_k)
+        H_k = hessf(x_k)
 
             # Fontion quadratique à étudier
-            m_k(x) = (f(x) + transpose(g_k) * x + 0.5 * transpose(x) * H_k * x)
+        m_k(x) = (f(x) + transpose(g_k) * x + 0.5 * transpose(x) * H_k * x)
 
-            if norm(g_k) < eps()
-                continuer = false
-                flag = 0
-                break
-            end
+        if norm(g_k) < eps()
+            continuer = false
+            flag = 0
+            break
+        end
 
-            # Calcul du pas de Cauchy
-            s_k, etat_cauchy = Pas_De_Cauchy(g_k, H_k, delta_k)
+            # Choix de l'algorithme 
+        if algo == "cauchy"
+            s_k, _ = Pas_De_Cauchy(g_k, H_k, delta_k)
+        else
+            s_k = Gradient_Conjugue_Tronque(g_k, H_k, [delta_k, max_iter, 1e-6])
+        end
+            
             
             # println("Pas de chauchy : ", s_k)
             # println("Région de confiance : ", delta_k)
 
             # Calcul des conditions de mise à jour de l'itéré courant et de la région de confiance
-            f_tmp = f(x_k + s_k)
-            p_k = abs((f(x_k) - f_tmp) / (m_k(x_tard) - m_k(s_k)))
+        f_tmp = f(x_k + s_k)
+        p_k = (f(x_k) - f_tmp) / (m_k(x_k) - m_k(x_k + s_k))
+
             # println("p_k = ", p_k)
 
             # Les deux structures conditionnelles ci-dessous sont séparées par soucis de clarté
 
             # Mise à jour de l'itéré courant x_k
-            if p_k >= eta1
-            #    println("true")
-
+        if p_k >= eta1
                 # On sauvegarde x_k uniquement si il change
-                x_k_prec = x_k
-                val_prec = f(x_k)
-                x_k = x_k + s_k
+            x_k_prec = x_k
+            val_prec = f(x_k)
+            x_k = x_k + s_k
                 # println("x change : ", x_k)
-            end
+        end
 
             # Mise à jour de la région de confiance
-            if p_k >= eta2
-                delta_k = min(gamma2 * delta_k, deltaMax)
-            else
-                if p_k < eta1
-                    delta_k = gamma1 * delta_k
-                end
+        if p_k >= eta2
+            delta_k = min(gamma2 * delta_k, deltaMax)
+        else
+            if p_k < eta1
+                delta_k = gamma1 * delta_k
             end
+        end
 
 
             # Mise à jour de val
-            val = f(x_k)
+        val = f(x_k)
             
-            nb_iters = nb_iters + 1
+        nb_iters = nb_iters + 1
 
             # Tests d'arrêts, séparés pour plus de clarté également
 
             # Si x_k a changé, on peut le comparer avec l'ancien
-            if p_k >= eta1
+        if p_k >= eta1
 
-                norm_sk = norm(s_k)
-                if (norm_sk < Tol_abs || norm_sk / min(norm(val), norm(val_prec)) < Tol_rel)
-                    continuer = false
-                    flag = 2
-                end
-
-                if (norm_sk < Tol_abs || norm_sk / min(norm(x_k), norm(x_k_prec)) < Tol_rel)
-                    continuer = false
-                    flag = 1
-                end
-
+            norm_sk = norm(s_k)
+            if (norm_sk < Tol_abs || norm_sk / min(norm(val), norm(val_prec)) < Tol_rel)
+                continuer = false
+                flag = 2
             end
 
-            if nb_iters >= max_iter
+            if (norm_sk < Tol_abs || norm_sk / min(norm(x_k), norm(x_k_prec)) < Tol_rel)
                 continuer = false
-                flag = 3
+                flag = 1
             end
 
         end
 
-        xmin = x_k
-        fxmin = val
+        if nb_iters >= max_iter
+            continuer = false
+            flag = 3
+        end
 
-
-    else
-        println("rien")
     end
-        
 
+    xmin = x_k
+    fxmin = val
+
+
+    
     return xmin, fxmin, flag, nb_iters
 end
