@@ -78,7 +78,7 @@ function Algorithme_De_Newton(f::Function, gradf::Function, hessf::Function, x0,
             continuer = false
             flag = 3
         end
-        if (norm_dk < Tol_abs || norm_dk / min(norm(val), norm(val_prec)) < Tol_rel)
+        if (norm(val - val_prec) < Tol_abs || norm(val - val_prec) / min(norm(val), norm(val_prec)) < Tol_rel)
             continuer = false
             flag = 2
         end
