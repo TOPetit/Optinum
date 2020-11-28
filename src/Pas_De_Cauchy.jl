@@ -38,9 +38,8 @@ function Pas_De_Cauchy(g, H, delta)
     e = 0
     n = length(g)
     s = zeros(n)
-    lambda = 0 # Permet de travailler avec une version normalisée (tq lambda*delta = ||g||*t)
 
-    # m(t) = 0.5*at^2 + bt + c
+    # phi(t) = 0.5*at^2 + bt + c
     a = transpose(g) * H * g
     b = - norm(g)^2
     
@@ -48,18 +47,13 @@ function Pas_De_Cauchy(g, H, delta)
         e = 0
     else
 
-        if (a <= 0)
-            lambda = 1
+        # Disjonction de cas (notamment sur le signes de a)
+        if a > 0 && (-b / a) <= (delta / norm(g))
+            s = b / a * g
         else
-            lambda = min(1, (-b * norm(g)) / (a * delta))
+            s = -(delta / norm(g)) * g
         end
-
-        if lambda == 1
-            e = - 1
-        else
-            e = 1
-        end
-        s = -lambda * (delta * g) / norm(g)
+   
     end
 
 

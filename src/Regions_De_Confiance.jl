@@ -51,17 +51,20 @@ xmin, fxmin, flag,nb_iters = Regions_De_Confiance(algo,f,gradf,hessf,x0,options)
 ```
 """
 
+
 include("Pas_De_Cauchy.jl")
+include("Gradient_Conjugue_Tronque.jl")
+
 function Regions_De_Confiance(algo, f::Function, gradf::Function, hessf::Function, x0, options)
 
     if options == []
         deltaMax = 10
-        gamma1 = 0.25
-        gamma2 = 2.00
+        gamma1 = 0.75
+        gamma2 = 2
         eta1 = 0.25
         eta2 = 0.75
         delta0 = 2
-        max_iter = 1000
+        max_iter = 5000
         Tol_abs = sqrt(eps())
         Tol_rel = 1e-15
     else
@@ -82,7 +85,6 @@ function Regions_De_Confiance(algo, f::Function, gradf::Function, hessf::Functio
     nb_iters = 0
 
     x_k = x0
-    val = f(x0)
     delta_k = delta0
 
  
@@ -90,94 +92,63 @@ function Regions_De_Confiance(algo, f::Function, gradf::Function, hessf::Functio
         # Condition d'arrêt de la boucle while
     continuer = true
 
-    while continuer
+    while continuer && norm(gradf(x_k)) > eps()
+
+        nb_iters = nb_iters + 1
 
 
-            # Calcul du gradient et de la hessienne en x0
-        g_k = gradf(x_k)
-        H_k = hessf(x_k)
+        # Calcul de s_k avec la méthode choisie
+        s_k, erreur_cauchy = Pas_De_Cauchy(gradf(x_k), hessf(x_k), delta_k)
 
-            # Fontion quadratique à étudier
-        m_k(x) = (f(x) + transpose(g_k) * x + 0.5 * transpose(x) * H_k * x)
 
-        if norm(g_k) < eps()
-            continuer = false
-            flag = 0
-            break
-        end
+        # Calcul de la condition de mise à jour de l'itéré courant et de la région de confiance
+        q(s) = 0.5 * transpose(s) * hessf(x_k) * s + transpose(gradf(x_k)) * s + f(x_k) # Quadratique à étudier
+        p_k = (f(x_k) - f(x_k + s_k)) / (q(zeros(n)) - q(s_k)) # Calcul de p_k
 
-            # Choix de l'algorithme 
-        if algo == "cauchy"
-            s_k, _ = Pas_De_Cauchy(g_k, H_k, delta_k)
-        else
-            s_k = Gradient_Conjugue_Tronque(g_k, H_k, [delta_k, max_iter, 1e-6])
-        end
-            
-            
-            # println("Pas de chauchy : ", s_k)
-            # println("Région de confiance : ", delta_k)
 
-            # Calcul des conditions de mise à jour de l'itéré courant et de la région de confiance
-        f_tmp = f(x_k + s_k)
-        p_k = (f(x_k) - f_tmp) / (m_k(x_k) - m_k(x_k + s_k))
-
-            # println("p_k = ", p_k)
-
-            # Les deux structures conditionnelles ci-dessous sont séparées par soucis de clarté
-
-            # Mise à jour de l'itéré courant x_k
+        # Mise à jour de l'itéré courant
         if p_k >= eta1
-                # On sauvegarde x_k uniquement si il change
-            x_k_prec = x_k
-            val_prec = f(x_k)
+
+            x_k_prec = x_k # On sauvegarde x_k
             x_k = x_k + s_k
-                # println("x change : ", x_k)
+
+            # On teste la stagnation de x
+            if norm(s_k) < Tol_abs || norm(s_k) / min(norm(x_k), norm(x_k_prec)) < Tol_rel
+                flag = 1
+                continuer = false
+            end
+
+            # On teste la stagnation de f
+            if norm(f(x_k) - f(x_k_prec)) < Tol_abs || norm(f(x_k) - f(x_k_prec)) / min(norm(f(x_k)), norm(f(x_k_prec))) < Tol_rel
+                flag = 2
+                continuer = false
+            end
+
         end
 
-            # Mise à jour de la région de confiance
+
+        # Mise à jour de la région de confiance
         if p_k >= eta2
+            # Itération très satisfaisante
             delta_k = min(gamma2 * delta_k, deltaMax)
         else
-            if p_k < eta1
+            if p_k <= eta1
+                # Itération non satisfaisante
                 delta_k = gamma1 * delta_k
             end
         end
 
 
-            # Mise à jour de val
-        val = f(x_k)
-            
-        nb_iters = nb_iters + 1
-
-            # Tests d'arrêts, séparés pour plus de clarté également
-
-            # Si x_k a changé, on peut le comparer avec l'ancien
-        if p_k >= eta1
-
-            norm_sk = norm(s_k)
-            if (norm_sk < Tol_abs || norm_sk / min(norm(val), norm(val_prec)) < Tol_rel)
-                continuer = false
-                flag = 2
-            end
-
-            if (norm_sk < Tol_abs || norm_sk / min(norm(x_k), norm(x_k_prec)) < Tol_rel)
-                continuer = false
-                flag = 1
-            end
-
-        end
-
+        # Tests pour la boucle
         if nb_iters >= max_iter
-            continuer = false
             flag = 3
+            continuer = false
+        
         end
-
     end
 
     xmin = x_k
-    fxmin = val
+    fxmin = f(x_k)
 
-
-    
     return xmin, fxmin, flag, nb_iters
 end

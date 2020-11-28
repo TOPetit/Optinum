@@ -1,4 +1,4 @@
-@doc doc"""
+#= @doc doc"""
 Approximation de la solution du problème ``\min_{x \in \mathbb{R}^{n}} f(x)`` en utilisant l'algorithme de Newton
 
 # Syntaxe
@@ -36,7 +36,7 @@ x0 = [1; 0]
 options = []
 xmin,f_min,flag,nb_iters = Algorithme_De_Newton(f,gradf,hessf,x0,options)
 ```
-"""
+""" =#
 function Algorithme_De_Newton(f::Function, gradf::Function, hessf::Function, x0, options)
 
     "# Si options == [] on prends les paramètres par défaut"
