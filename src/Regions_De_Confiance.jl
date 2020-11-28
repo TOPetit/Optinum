@@ -98,7 +98,14 @@ function Regions_De_Confiance(algo, f::Function, gradf::Function, hessf::Functio
 
 
         # Calcul de s_k avec la méthode choisie
-        s_k, erreur_cauchy = Pas_De_Cauchy(gradf(x_k), hessf(x_k), delta_k)
+        if algo == "cauchy"
+            s_k, erreur_cauchy = Pas_De_Cauchy(gradf(x_k), hessf(x_k), delta_k)
+        elseif algo == "gct"
+            s_k = Gradient_Conjugue_Tronque(gradf(x_k), hessf(x_k), [delta_k, 100, 1e-6])
+        else
+            println("Erreur, algorithme ", algo, " inconnu.")
+            continuer = false
+        end
 
 
         # Calcul de la condition de mise à jour de l'itéré courant et de la région de confiance

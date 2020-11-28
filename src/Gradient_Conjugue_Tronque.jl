@@ -62,11 +62,13 @@ function Gradient_Conjugue_Tronque(gradfk, hessfk, options)
             # On résoud le trinôme demandé (ax² + bx + c = 0)
             a = transpose(p_j) * p_j
             b = transpose(s_j) * p_j + transpose(p_j) * s_j
-            c = transpose(s_j) * s_j - deltaj
+            c = transpose(s_j) * s_j - deltaj^2
             discriminant = b^2 - 4 * a * c
 
             if discriminant < 0
                 println("Erreur, pas de solution réelle 1")
+                s = s_j_prec
+                continuer = false
                 break
             else
                 x1 = (b - sqrt(discriminant)) / (2 * a)
@@ -81,35 +83,40 @@ function Gradient_Conjugue_Tronque(gradfk, hessfk, options)
             end
             
             s = s_j + sigma_j * p_j
+            continuer = false
             break
         end
 
         alpha_j = transpose(g_j) * g_j / k_j
 
-        if norm(s_j + alpha_j * p_j) >= deltaj
+        if norm(s_j + alpha_j * p_j) >= deltaj^2
 
 
             # On résoud le trinôme demandé (ax² + bx + c = 0)
             a = transpose(p_j) * p_j
             b = transpose(s_j) * p_j + transpose(p_j) * s_j
-            c = transpose(s_j) * s_j - deltaj
+            c = transpose(s_j) * s_j - deltaj^2
             discriminant = b^2 - 4 * a * c
 
             if discriminant < 0
-                println("Erreur, pas de solution réelle 2")
+                # println(" Erreur, pas de solution réelle 2 ")
+                continuer = false
                 break
             else
                 x1 = (b - sqrt(discriminant)) / (2 * a)
                 x2 = (b + sqrt(discriminant)) / (2 * a)
             end
 
-            if x1 * x2 >= 0
+            
+            if x1 * x2 > 0
                 println("Erreur, les solutions sont de même signe")
+                continuer = false
             else
                 sigma_j = max(x1, x2)
-            end
-            
+            end 
+
             s = s_j + sigma_j * p_j
+            continuer = false
             break
             
         end
@@ -139,5 +146,13 @@ function Gradient_Conjugue_Tronque(gradfk, hessfk, options)
         end
     end
 
-    return s
+    if s == zeros(n)
+        s = s_j
+    end
+    
+    if any(isnan, s)
+        return zeros(n)
+    else
+        return s
+    end
 end
