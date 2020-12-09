@@ -73,7 +73,22 @@ function Lagrangien_Augmente(algo,fonc::Function,contrainte::Function,gradfonc::
     xmin = zeros(n)
 	fxmin = 0
 	flag = 0
-	iter = 0
+    iter = 0
+
+    xk = x0
+    lambdak = zeros(n)
+    muk = mu0
+  
+    while iter < itermax
+
+        L_A(x) = f(x) + transpose(lambdak) * contrainte(x) + 0.5 * muk * norm(contrainte(x))^2
+        grad_L_A(x) = gradfonc(x) + transpose(lambdak) * grad_contrainte(x) + muk * transpose(contrainte(x)) * grad_contrainte(x)
+        # hess_L_A(x) = 
+
+        iter = iter + 1
+    end
+
+
 	
-	return xmin,fxmin,flag,iter
+	return xmin, fxmin, flag, iter
 end
