@@ -50,6 +50,10 @@ hess_contrainte(x) = [2 0;0 2]
 output = Lagrangien_Augmente(algo,f,contrainte,gradf,hessf,grad_contrainte,hess_contrainte,x0,options)
 ```
 """
+
+include("Algorithme_De_Newton.jl")
+include("Regions_De_Confiance.jl")
+
 function Lagrangien_Augmente(algo,fonc::Function,contrainte::Function,gradfonc::Function,
 	hessfonc::Function,grad_contrainte::Function,hess_contrainte::Function,x0,options)
 
@@ -72,23 +76,60 @@ function Lagrangien_Augmente(algo,fonc::Function,contrainte::Function,gradfonc::
     n = length(x0)
     xmin = zeros(n)
 	fxmin = 0
-	flag = 0
+	flag = -1
     iter = 0
+    
 
+    continuer = true
     xk = x0
-    lambdak = zeros(n)
+    lambdak = mu0 * contrainte(x0)
     muk = mu0
+    beta = 0.9
+    alpha = 0.1
+    eps0 = epsilon
+    eta_bis0 = 0.1258925
+    etak = eta_bis0 / (mu0^alpha)
   
-    while iter < itermax
+    while continuer
 
-        L_A(x) = f(x) + transpose(lambdak) * contrainte(x) + 0.5 * muk * norm(contrainte(x))^2
+        L_A(x) = fonc(x) + transpose(lambdak) * contrainte(x) + 0.5 * muk * norm(contrainte(x))^2
         grad_L_A(x) = gradfonc(x) + transpose(lambdak) * grad_contrainte(x) + muk * transpose(contrainte(x)) * grad_contrainte(x)
-        # hess_L_A(x) = 
+        hess_L_A(x) = hessfonc(x) + transpose(lambdak) * hess_contrainte(x) + muk * grad_contrainte(x) * transpose(grad_contrainte(x)) + hess_contrainte(x) * contrainte(x)
 
+        if algo == "newton"
+            xmin, _, _, _ = Algorithme_De_Newton(L_A, grad_L_A, hess_L_A, xk, [100, epsilon, epsilon])
+        else
+            xmin, _, _, _ = Regions_De_Confiance(algo, L_A, grad_L_A, hess_L_A, xk, [10, 0.75, 2, 0.25, 0.75, 2, 5000, epsilon, epsilon])
+        end
+
+        if norm(xk - xmin) < tol || norm(xk - xmin) / max(norm(xk), norm(xmin)) < tol
+            # Convergence
+            continuer = false
+            flag = 0
+        end
+
+        if norm(contrainte(xmin)) <= etak
+            lambdak = lambdak + muk * contrainte(xmin)
+            epsilon = epsilon / muk
+            etak = etak / (muk^beta)
+        else
+            muk = muk * tho
+            espsilon = eps0 / muk
+            etak = eta_bis0 / (muk^alpha)
+        end
+
+        xk = xmin
         iter = iter + 1
+
+        if iter >= itermax
+            continuer = false
+            flag = 1
+        end
+
     end
 
+    xmin = xk
+    fxmin = fonc(xmin)
 
-	
 	return xmin, fxmin, flag, iter
 end
