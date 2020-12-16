@@ -50,8 +50,10 @@ function Pas_De_Cauchy(g, H, delta)
         # Disjonction de cas (notamment sur le signes de a)
         if a > 0 && (-b / a) <= (delta / norm(g))
             s = b / a * g
+            e = -1
         else
             s = -(delta / norm(g)) * g
+            e = 1
         end
    
     end

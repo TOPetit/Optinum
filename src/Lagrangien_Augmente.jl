@@ -131,5 +131,5 @@ function Lagrangien_Augmente(algo,fonc::Function,contrainte::Function,gradfonc::
     xmin = xk
     fxmin = fonc(xmin)
 
-	return xmin, fxmin, flag, iter
+	return xmin, fxmin, flag, iter, lambdak, muk
 end

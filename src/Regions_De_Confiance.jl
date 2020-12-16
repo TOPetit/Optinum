@@ -64,7 +64,7 @@ function Regions_De_Confiance(algo, f::Function, gradf::Function, hessf::Functio
         eta1 = 0.25
         eta2 = 0.75
         delta0 = 2
-        max_iter = 5000
+        max_iter = 10000
         Tol_abs = sqrt(eps())
         Tol_rel = 1e-15
     else
